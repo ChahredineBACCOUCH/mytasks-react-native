@@ -1,0 +1,20 @@
+{
+  "tasks": [
+    {
+      "id": "1",
+      "title": "Préparer la présentation",
+      "description": "Réaliser les diapositives pour la présentation du projet.",
+      "priority": "elevee",
+      "status": "a_faire",
+      "createdAt": "2025-04-12T09:00:00.000Z"
+    },
+    {
+      "id": "2",
+      "title": "Lire la documentation",
+      "description": "Lire la documentation de React Native.",
+      "priority": "faible",
+      "status": "terminee",
+      "createdAt": "2025-04-12T10:00:00.000Z"
+    }
+  ]
+}
