@@ -1,20 +1,16 @@
+// Point de départ de l'application.
+//  - TasksProvider : partage les tâches avec tous les écrans
+//  - AppNavigator  : gère les écrans et la navigation
+
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { TasksProvider } from './src/context/TasksContext';
+import AppNavigator from './src/navigation/AppNavigator';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <TasksProvider>
+      <AppNavigator />
+      <StatusBar style="dark" />
+    </TasksProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
