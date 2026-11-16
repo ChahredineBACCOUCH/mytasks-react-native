@@ -14,10 +14,10 @@
 import { API_URL } from '../config';
 
 // Petite fonction d'aide : appelle le serveur et vérifie la réponse.
-// Si le serveur ne répond pas en 5 secondes, on abandonne.
-async function request(path, method = 'GET', body) {
+// Si le serveur ne répond pas à temps (5 secondes par défaut), on abandonne.
+async function request(path, method = 'GET', body, timeout = 5000) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5000);
+  const timer = setTimeout(() => controller.abort(), timeout);
 
   try {
     const response = await fetch(API_URL + path, {
@@ -54,4 +54,34 @@ export async function updateTask(task) {
 // Supprimer une tâche
 export async function deleteTask(id) {
   await request('/tasks/' + id, 'DELETE');
+}
+
+// =====================================================================
+//  VERSION 4 : FICHIERS ET COMMENTAIRES (seulement en ligne)
+// =====================================================================
+
+// Envoyer un fichier : { id, name, mimeType, size, data (base64) }
+// 30 secondes maximum, car un fichier peut être plus long à envoyer.
+export async function uploadFile(file) {
+  await request('/files', 'POST', file, 30000);
+}
+
+// L'adresse qui renvoie le VRAI fichier (voir server/download.js)
+export function fileUrl(id) {
+  return API_URL + '/download/' + id;
+}
+
+// Les commentaires d'une tâche, du plus ancien au plus récent
+export async function getComments(taskId) {
+  return await request('/comments?task=' + taskId + '&_sort=createdAt&_order=asc');
+}
+
+// Tous les commentaires (pour savoir s'il y en a de nouveaux)
+export async function getAllComments() {
+  return await request('/comments');
+}
+
+// Ajouter un commentaire : { id, task, author, text, createdAt }
+export async function addComment(comment) {
+  await request('/comments', 'POST', comment);
 }

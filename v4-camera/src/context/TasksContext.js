@@ -10,6 +10,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import * as storage from '../storage/syncStore'; // Version 4 : local + sync (comme la v3)
+import { cancelReminder, scheduleReminder, syncReminders } from '../services/notifications';
 
 const TasksContext = createContext();
 
@@ -27,6 +28,7 @@ export function TasksProvider({ children }) {
     try {
       const data = await storage.getTasks();
       setTasks(data);
+      syncReminders(data); // Version 4 : programmer les rappels qui manquent
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de charger les tâches.\n' + error.message);
     }
@@ -34,20 +36,27 @@ export function TasksProvider({ children }) {
   }
 
   // Ajouter une tâche. Retourne true si ça a marché.
-  async function addTask(title, description, priority, image) {
+  // data = { title, description, priority, image, files, reminder, location, observers }
+  async function addTask(data) {
     const newTask = {
       id: Date.now().toString(), // un identifiant unique simple
-      title: title,
-      description: description,
-      priority: priority,
+      title: data.title,
+      description: data.description,
+      priority: data.priority,
       status: 'a_faire',
       createdAt: new Date().toISOString(),
-      image: image, // Version 4 : photo en base64, ou null
+      // ----- Version 4 -----
+      image: data.image || null, // photo en base64
+      files: data.files || [], // [{ id, name, mimeType, size }] (contenu sur le serveur)
+      reminder: data.reminder || null, // date ISO du rappel
+      location: data.location || null, // { latitude, longitude, label, radius }
+      observers: data.observers || [], // noms des observateurs
     };
 
     try {
       await storage.addTask(newTask);
       setTasks([...tasks, newTask]); // nouvelle liste = ancienne + nouvelle tâche
+      scheduleReminder(newTask); // Version 4 : notification à la date du rappel
       return true;
     } catch (error) {
       Alert.alert('Erreur', "La tâche n'a pas été ajoutée.\n" + error.message);
@@ -60,6 +69,7 @@ export function TasksProvider({ children }) {
     try {
       await storage.updateTask(task);
       setTasks(tasks.map((t) => (t.id === task.id ? task : t)));
+      scheduleReminder(task); // Version 4 : reprogrammer (ou annuler si terminée)
       return true;
     } catch (error) {
       Alert.alert('Erreur', "La tâche n'a pas été modifiée.\n" + error.message);
@@ -72,6 +82,7 @@ export function TasksProvider({ children }) {
     try {
       await storage.deleteTask(id);
       setTasks(tasks.filter((t) => t.id !== id));
+      cancelReminder(id); // Version 4 : plus de rappel pour une tâche supprimée
       return true;
     } catch (error) {
       Alert.alert('Erreur', "La tâche n'a pas été supprimée.\n" + error.message);

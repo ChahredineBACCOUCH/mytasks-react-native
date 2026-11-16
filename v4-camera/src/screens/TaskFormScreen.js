@@ -2,11 +2,18 @@
 //
 //  - Ouvert SANS id  -> on AJOUTE une nouvelle tâche
 //  - Ouvert AVEC id  -> on MODIFIE la tâche existante
+//
+//  Version 4 : chaque nouveauté est un composant dans src/components/fields/
+//    PhotoField (caméra), FilesField (fichiers), ReminderField (date/heure),
+//    PlaceField (lieu OpenStreetMap), ObserversField (observateurs)
 
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { takePhoto } from '../camera';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import FilesField from '../components/fields/FilesField';
+import ObserversField from '../components/fields/ObserversField';
+import PhotoField from '../components/fields/PhotoField';
+import PlaceField from '../components/fields/PlaceField';
+import ReminderField from '../components/fields/ReminderField';
 import { useTasks } from '../context/TasksContext';
 import { COLORS, PRIORITIES, STATUSES } from '../theme';
 
@@ -23,13 +30,25 @@ export default function TaskFormScreen({ route, navigation }) {
   const [description, setDescription] = useState(isEdit ? task.description : '');
   const [priority, setPriority] = useState(isEdit ? task.priority : 'moyenne');
   const [status, setStatus] = useState(isEdit ? task.status : 'a_faire');
-  const [image, setImage] = useState(isEdit ? task.image : null); // photo (ou null)
   const [error, setError] = useState('');
 
-  // Version 4 : ouvrir la caméra et garder la photo dans le state
-  async function handleTakePhoto() {
-    const photo = await takePhoto();
-    if (photo) setImage(photo);
+  // ----- Version 4 -----
+  const [image, setImage] = useState(isEdit ? task.image || null : null);
+  const [files, setFiles] = useState(isEdit ? task.files || [] : []);
+  const [reminder, setReminder] = useState(isEdit ? task.reminder || null : null);
+  const [location, setLocation] = useState(isEdit ? task.location || null : null);
+  const [observers, setObservers] = useState(isEdit ? task.observers || [] : []);
+
+  // Remet le formulaire à zéro (après un ajout)
+  function resetForm() {
+    setTitle('');
+    setDescription('');
+    setPriority('moyenne');
+    setImage(null);
+    setFiles([]);
+    setReminder(null);
+    setLocation(null);
+    setObservers([]);
   }
 
   async function handleSave() {
@@ -40,33 +59,33 @@ export default function TaskFormScreen({ route, navigation }) {
     }
     setError('');
 
+    const fields = {
+      title: title.trim(),
+      description: description.trim(),
+      priority,
+      image,
+      files,
+      reminder,
+      location,
+      observers,
+    };
+
     if (isEdit) {
       // MODIFIER : on garde l'ancienne tâche et on change certains champs
-      const ok = await updateTask({
-        ...task,
-        title: title.trim(),
-        description: description.trim(),
-        priority: priority,
-        status: status,
-        image: image,
-      });
+      const ok = await updateTask({ ...task, ...fields, status });
       if (ok) navigation.goBack();
     } else {
       // AJOUTER
-      const ok = await addTask(title.trim(), description.trim(), priority, image);
+      const ok = await addTask(fields);
       if (ok) {
-        // on vide le formulaire pour la prochaine fois
-        setTitle('');
-        setDescription('');
-        setPriority('moyenne');
-        setImage(null);
+        resetForm(); // on vide le formulaire pour la prochaine fois
         navigation.navigate('Tâches');
       }
     }
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.label}>Titre *</Text>
       <TextInput
         style={[styles.input, error !== '' && { borderColor: COLORS.danger }]}
@@ -96,23 +115,21 @@ export default function TaskFormScreen({ route, navigation }) {
         </>
       )}
 
-      {/* Version 4 : photo prise avec la caméra */}
+      {/* ----- Version 4 ----- */}
       <Text style={styles.label}>Photo</Text>
-      {image && <Image source={{ uri: image }} style={styles.photo} />}
-      <View style={styles.photoButtons}>
-        <Pressable style={styles.photoButton} onPress={handleTakePhoto}>
-          <Ionicons name="camera-outline" size={20} color={COLORS.primary} />
-          <Text style={styles.photoButtonText}>
-            {image ? 'Reprendre la photo' : 'Prendre une photo'}
-          </Text>
-        </Pressable>
-        {image && (
-          <Pressable style={styles.photoButton} onPress={() => setImage(null)}>
-            <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
-            <Text style={[styles.photoButtonText, { color: COLORS.danger }]}>Retirer</Text>
-          </Pressable>
-        )}
-      </View>
+      <PhotoField value={image} onChange={setImage} />
+
+      <Text style={styles.label}>Fichiers</Text>
+      <FilesField value={files} onChange={setFiles} />
+
+      <Text style={styles.label}>Rappel (date et heure)</Text>
+      <ReminderField value={reminder} onChange={setReminder} />
+
+      <Text style={styles.label}>Rappel à un lieu</Text>
+      <PlaceField value={location} onChange={setLocation} />
+
+      <Text style={styles.label}>Observateurs</Text>
+      <ObserversField value={observers} onChange={setObservers} />
 
       <Pressable style={styles.button} onPress={handleSave}>
         <Text style={styles.buttonText}>Enregistrer</Text>
@@ -158,7 +175,7 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: '600',
     color: COLORS.text,
-    marginTop: 14,
+    marginTop: 18,
     marginBottom: 6,
   },
   input: {
@@ -187,32 +204,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
-  },
-  photo: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  photoButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  photoButton: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
-  },
-  photoButtonText: {
-    color: COLORS.primary,
-    fontWeight: '600',
   },
   button: {
     backgroundColor: COLORS.primary,

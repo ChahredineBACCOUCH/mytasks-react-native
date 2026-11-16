@@ -1,14 +1,25 @@
 {
   "expo": {
-    "name": "MyTasks V4 Camera",
+    "name": "MyTasks V4",
     "slug": "mytasks-v4-camera",
     "plugins": [
       [
-        "expo-image-picker",
+        "expo-camera",
         {
-          "cameraPermission": "MyTasks utilise la caméra pour ajouter une photo à une tâche."
+          "cameraPermission": "MyTasks utilise la caméra pour ajouter une photo à une tâche.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
         }
-      ]
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "MyTasks utilise ta position pour te rappeler une tâche quand tu arrives à un lieu."
+        }
+      ],
+      "expo-notifications",
+      "expo-sharing",
+      "@react-native-community/datetimepicker"
     ],
     "version": "1.0.0",
     "orientation": "portrait",

@@ -4,7 +4,7 @@
 //  - En bas : 4 onglets (Accueil, Tâches, Ajouter, Profil)
 //  - Par-dessus les onglets : les écrans "Details" et "Modifier"
 
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +18,10 @@ import { COLORS } from '../theme';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+// Version 4 : permet de naviguer depuis l'extérieur des écrans
+// (par exemple quand on touche une notification, voir Watchers.js)
+export const navigationRef = createNavigationContainerRef();
 
 // Icône de chaque onglet
 const ICONS = {
@@ -48,7 +52,7 @@ function Tabs() {
 
 export default function AppNavigator() {
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator>
         <Stack.Screen name="Onglets" component={Tabs} options={{ headerShown: false }} />
         <Stack.Screen name="Details" component={TaskDetailsScreen} options={{ title: "Détails d'une tâche" }} />

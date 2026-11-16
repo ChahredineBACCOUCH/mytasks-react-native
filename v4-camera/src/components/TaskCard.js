@@ -26,6 +26,14 @@ export default function TaskCard({ task, onPress }) {
           <Badge label={priority.label} color={priority.color} bg={priority.bg} />
           <Badge label={status.label} color={status.color} bg={status.bg} />
         </View>
+
+        {/* Version 4 : petites icônes si la tâche a un rappel, un lieu, des fichiers... */}
+        <View style={styles.icons}>
+          {task.reminder && <Ionicons name="alarm-outline" size={15} color={COLORS.grey} />}
+          {task.location && <Ionicons name="location-outline" size={15} color={COLORS.grey} />}
+          {task.files?.length > 0 && <Ionicons name="attach-outline" size={15} color={COLORS.grey} />}
+          {task.observers?.length > 0 && <Ionicons name="eye-outline" size={15} color={COLORS.grey} />}
+        </View>
       </View>
 
       <Ionicons name="chevron-forward" size={20} color={COLORS.grey} />
@@ -57,6 +65,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  icons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 6,
   },
   title: {
     fontSize: 16,
